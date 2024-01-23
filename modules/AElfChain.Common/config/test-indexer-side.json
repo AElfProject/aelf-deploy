@@ -1,0 +1,17 @@
+{
+  "RequireAuthority": true,
+  "Nodes": [
+    {
+      "name": "bp1",
+      "endpoint": "192.168.66.49:8000",
+      "account": "2KQWh5v6Y24VcGgsx2KHpQvRyyU5DnCZ4eAUPqGQbnuZgExKaV",
+      "password": "12345678"
+    }
+  ],
+  "BasicAuth": {
+    "userName" : "aelf",
+    "password": "12345678"
+  },
+  "NativeTokenSymbol": "ELF",
+  "DefaultPassword": "12345678"
+}
