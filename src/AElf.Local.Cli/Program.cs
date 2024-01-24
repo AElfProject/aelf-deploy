@@ -31,15 +31,17 @@ public class Program
         var authorInfo = new AuthorInfo
         {
             Author = o.Address,
+            isProxyAddress = o.IsProxyAddress,
+            Signer = o.Signer
         };
         if (o.IsUpdate)
         {
-            service.UpdateContracts(o.IsApproval, new UpdateInfo(), o.ContractDllPath,
-                authorInfo);
+            service.UpdateContracts(o.IsApproval, new UpdateInfo { ContractAddress = o.UpdateAddress },
+                o.ContractDllPath, authorInfo, o.Salt);
         }
         else
         {
-            service.DeployContracts(o.IsApproval, o.ContractDllPath, authorInfo);
+            service.DeployContracts(o.IsApproval, o.ContractDllPath, authorInfo, o.Salt);
         }
     }
 
@@ -62,5 +64,17 @@ public class Program
 
         [Option('i', "approval", Default = false, HelpText = "Is approval needed.")]
         public bool IsApproval { get; set; }
+
+        [Option('s', "salt", Default = false, HelpText = "Salt to calculate contract address.")]
+        public string Salt { get; set; }
+
+        [Option('o', "isproxyaddress", Default = false, HelpText = "Is proxy address.")]
+        public bool IsProxyAddress { get; set; }
+
+        [Option('n', "signer", HelpText = "Signer")]
+        public string Signer { get; set; }
+
+        [Option('t', "updateaddress", HelpText = "Update address")]
+        public string UpdateAddress { get; set; }
     }
 }
