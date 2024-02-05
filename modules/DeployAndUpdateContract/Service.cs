@@ -1,3 +1,5 @@
+using AElf;
+using AElf.Cryptography;
 using AElf.Types;
 using AElfChain.Common.Contracts;
 using AElfChain.Common.DtoExtension;
@@ -16,6 +18,17 @@ public class Service
         CallAccount = callAddress.ConvertAddress();
 
         _nodeManager.UnlockAccount(CallAddress, password);
+        GetContractServices();
+    }
+    
+    public Service(string url, string privateKey)
+    {
+        _nodeManager = new NodeManager(url);
+        var keyPair = CryptoHelper.FromPrivateKey(ByteArrayHelper.HexStringToByteArray(privateKey));
+        CallAddress = Address.FromPublicKey(keyPair.PublicKey).ToBase58();
+        CallAccount = CallAddress.ConvertAddress();
+
+        _nodeManager.SetPrivateKey(privateKey);
         GetContractServices();
     }
 

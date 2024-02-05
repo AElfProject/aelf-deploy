@@ -98,7 +98,7 @@ namespace AElfChain.Common.Contracts
             return txResult.Status.ConvertTransactionResultStatus() == TransactionResultStatus.Mined;
         }
 
-        public TransactionResultDto DeployUserSmartContract(string contractFileName, Hash salt = null, string author = null)
+        public TransactionResultDto DeployUserSmartContract(string contractFileName, Hash? salt = null, string author = null)
         {
             var contractReader = new SmartContractReader(CommonHelper.GetCurrentDataDir());
             var codeArray = contractReader.Read(contractFileName);

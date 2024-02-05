@@ -32,7 +32,7 @@ namespace AElfChain.Common.Managers
         private const string KeyFolderName = "keys";
         public static ILog Logger = Log4NetHelper.GetLogger();
 
-        private static AElfKeyStore _keyStore;
+        private static AElfKeyStore? _keyStore;
         private readonly KeyStoreService _keyStoreService;
 
         private readonly List<Account> _unlockedAccounts;
@@ -41,9 +41,11 @@ namespace AElfChain.Common.Managers
         public AccountInfoCache CacheAccount;
         public TimeSpan DefaultTimeoutToClose = TimeSpan.FromMinutes(10); //in order to customize time setting.
 
-        private AElfKeyStore(string dataDirectory)
+        public string PrivateKey;
+
+        public AElfKeyStore(string? dataDirectory = null)
         {
-            DataDirectory = dataDirectory;
+            DataDirectory = dataDirectory ?? GetAppDataPath();
             CacheAccount = new AccountInfoCache();
             _unlockedAccounts = new List<Account>();
             _keyStoreService = new KeyStoreService();
@@ -80,6 +82,12 @@ namespace AElfChain.Common.Managers
             {
                 AsyncHelper.RunSync(() => UnlockAccountAsync(address, NodeOption.DefaultPassword));
                 kp = _unlockedAccounts.FirstOrDefault(oa => oa.AccountName == address)?.KeyPair;
+            }
+
+            if (kp == null)
+            {
+                var key = ByteArrayHelper.HexStringToByteArray(PrivateKey);
+                return CryptoHelper.FromPrivateKey(key);
             }
 
             return kp;

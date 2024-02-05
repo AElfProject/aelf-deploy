@@ -13,7 +13,7 @@ public class Program
     {
         Log4NetHelper.LogInit("AElfLocalNodeCli");
 
-        Parser.Default.ParseArguments<Options>(args)
+        Parser.Default.ParseArguments<DeployOptions>(args)
             .WithParsed(Run)
             .WithNotParsed(Error);
     }
@@ -23,58 +23,25 @@ public class Program
         Console.WriteLine("error: Failed to parse arguments.");
     }
 
-    private static void Run(Options o)
+    private static void Run(DeployOptions options)
     {
-        var basicService = new Service(o.Endpoint, o.Address, o.Password);
+        var basicService = new Service(options.Endpoint, options.PrivateKey);
         var service = new DeployAndUpdateService(basicService, Logger);
         service.CheckMinersAndInitAccountBalance();
         var authorInfo = new AuthorInfo
         {
-            Author = o.Address,
-            isProxyAddress = o.IsProxyAddress,
-            Signer = o.Signer
+            Author = options.Address,
+            isProxyAddress = options.IsProxyAddress,
+            Signer = options.Signer
         };
-        if (o.IsUpdate)
+        if (options.IsUpdate)
         {
-            service.UpdateContracts(o.IsApproval, new UpdateInfo { ContractAddress = o.UpdateAddress },
-                o.ContractDllPath, authorInfo, o.Salt);
+            service.UpdateContracts(options.IsApproval, new UpdateInfo { ContractAddress = options.UpdateAddress },
+                options.ContractDllPath, authorInfo, options.Salt);
         }
         else
         {
-            service.DeployContracts(o.IsApproval, o.ContractDllPath, authorInfo, o.Salt);
+            service.DeployContracts(options.IsApproval, options.ContractDllPath, authorInfo, options.Salt);
         }
-    }
-
-    private class Options
-    {
-        [Option('e', "endpoint", Default = "127.0.0.1:8000", HelpText = "Endpoint of local aelf node.")]
-        public string Endpoint { get; set; }
-
-        [Option('a', "address", Required = true, HelpText = "BP address of local aelf node.")]
-        public string Address { get; set; }
-
-        [Option('p', "password", Required = true, HelpText = "Password of key store file.")]
-        public string Password { get; set; }
-
-        [Option('u', "update", Default = false, HelpText = "Is update contract.")]
-        public bool IsUpdate { get; set; }
-
-        [Option('c', "contract", Required = true, HelpText = "The path of the contract's DLL.")]
-        public string ContractDllPath { get; set; }
-
-        [Option('i', "approval", Default = false, HelpText = "Is approval needed.")]
-        public bool IsApproval { get; set; }
-
-        [Option('s', "salt", Default = false, HelpText = "Salt to calculate contract address.")]
-        public string Salt { get; set; }
-
-        [Option('o', "isproxyaddress", Default = false, HelpText = "Is proxy address.")]
-        public bool IsProxyAddress { get; set; }
-
-        [Option('n', "signer", HelpText = "Signer")]
-        public string Signer { get; set; }
-
-        [Option('t', "updateaddress", HelpText = "Update address")]
-        public string UpdateAddress { get; set; }
     }
 }

@@ -24,6 +24,8 @@ namespace AElfChain.Common.Managers
         List<string> ListAccounts();
         bool UnlockAccount(string account, string password = "");
 
+        void SetPrivateKey(string privateKey);
+
         //chain
         string SendTransaction(string from, string to, string methodName, IMessage inputParameter);
         string SendTransaction(string from, string to, string methodName, IMessage inputParameter, out bool existed);

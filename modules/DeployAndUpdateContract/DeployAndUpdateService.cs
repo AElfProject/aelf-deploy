@@ -12,6 +12,7 @@ using AElfChain.Common.Helpers;
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using log4net;
+using Spectre.Console;
 using Volo.Abp.Threading;
 
 namespace DeployAndUpdateContract;
@@ -45,6 +46,7 @@ public class DeployAndUpdateService
             };
             
             _logger?.Info("======== WithApproval ========");
+            AnsiConsole.WriteLine("======== WithApproval ========");
             var contractProposalInfo = ProposeNewContract(input);
             ApproveByMiner(contractProposalInfo.ProposalId);
             var releaseCodeCheckInput = ReleaseApprove(contractProposalInfo);
@@ -398,7 +400,6 @@ public class DeployAndUpdateService
         {
             Proposers = { proposalWhiteList.Proposers }
         };
-
 
         var proposalId = parliament.CreateProposal(parliament.ContractAddress,
             nameof(ParliamentMethod.ChangeOrganizationProposerWhiteList), changeInput, defaultAddress,

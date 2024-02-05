@@ -169,6 +169,11 @@ namespace AElfChain.Common.Managers
             return AccountManager.UnlockAccount(account, password);
         }
 
+        public void SetPrivateKey(string privateKey)
+        {
+            _keyStore.PrivateKey = privateKey;
+        }
+
         #endregion
 
         #region Web request methods
