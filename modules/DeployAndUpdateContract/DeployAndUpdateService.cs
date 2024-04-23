@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using AElf;
 using AElf.Client.Dto;
+using AElf.Console;
 using AElf.Cryptography;
 using AElf.CSharp.Core;
 using AElf.Standards.ACS0;
@@ -27,44 +28,81 @@ public class DeployAndUpdateService
 
     public void DeployContracts(bool isApproval, string file, AuthorInfo author, string salt = "")
     {
-        var contractReader = new SmartContractReader(CommonHelper.GetCurrentDataDir());
-        var codeArray = contractReader.Read(file);
-        var codeHash = HashHelper.ComputeFrom(ByteString.CopyFrom(codeArray).ToByteArray());
-        var saltHash = HashHelper.ComputeFrom(salt);
-        
-        if (isApproval)
+        AnsiConsole.Progress()
+            // .HideCompleted(true)
+            .Start(ctx =>
         {
-            var contractOperation = salt == ""
-                ? null
-                : GenerateContractOperation(author, codeHash, saltHash, 1);
-
-            var input = new ContractDeploymentInput
-            {
-                Category = 0,
-                Code = ByteString.CopyFrom(codeArray),
-                ContractOperation = contractOperation
-            };
+            var prepareCodeTask = ctx.AddTask("[green]Reading dll[/]");
             
-            _logger?.Info("======== WithApproval ========");
-            AnsiConsole.WriteLine("======== WithApproval ========");
-            var contractProposalInfo = ProposeNewContract(input);
-            ApproveByMiner(contractProposalInfo.ProposalId);
-            var releaseCodeCheckInput = ReleaseApprove(contractProposalInfo);
-            ReleaseCodeCheck(releaseCodeCheckInput, "deploy");
-        }
-        else
-        {
-            var input = new UserContractDeploymentInput
+            var contractReader = new SmartContractReader(CommonHelper.GetCurrentDataDir());
+            var codeArray = contractReader.Read(file);
+            var codeHash = HashHelper.ComputeFrom(ByteString.CopyFrom(codeArray).ToByteArray());
+            var saltHash = HashHelper.ComputeFrom(salt);
+
+            prepareCodeTask.Increment(100);
+            prepareCodeTask.StopTask();
+
+            if (isApproval)
             {
-                Category = 0,
-                Code = ByteString.CopyFrom(codeArray),
-                Salt = salt == "" ? null : HashHelper.ComputeFrom(salt)
-            };
-            _logger?.Info("======== AddWhiteList ========");
-            ParliamentChangeWhiteList();
-            _logger?.Info("======== WithoutApproval ========");
-            DeployUserContract(input);
-        }
+                ConsoleOutput.GenerateAlert("Deploying contract with audit.");
+
+                var contractOperation = salt == ""
+                    ? null
+                    : GenerateContractOperation(author, codeHash, saltHash, 1);
+
+                var input = new ContractDeploymentInput
+                {
+                    Category = 0,
+                    Code = ByteString.CopyFrom(codeArray),
+                    ContractOperation = contractOperation
+                };
+
+                _logger?.Info("======== WithApproval ========");
+                var contractProposalInfo = ProposeNewContract(input);
+
+                var approveTask = ctx.AddTask("[green]Approving deployment[/]");
+                
+                ApproveByMiner(contractProposalInfo.ProposalId);
+
+                approveTask.Increment(100);
+                approveTask.StopTask();
+                
+                var releaseCodeCheckInput = ReleaseApprove(contractProposalInfo);
+                
+                var releaseTask = ctx.AddTask("[green]Releasing proposal[/]");
+
+                ReleaseCodeCheck(releaseCodeCheckInput, "deploy");
+
+                releaseTask.Increment(100);
+                releaseTask.StopTask();
+            }
+            else
+            {
+                ConsoleOutput.StandardAlert("Deploying contract without audit.");
+
+                var input = new UserContractDeploymentInput
+                {
+                    Category = 0,
+                    Code = ByteString.CopyFrom(codeArray),
+                    Salt = salt == "" ? null : HashHelper.ComputeFrom(salt)
+                };
+                _logger?.Info("======== AddWhiteList ========");
+                
+                var addWhitelistTask = ctx.AddTask("[green]Manipulating whitelist[/]");
+                
+                ParliamentChangeWhiteList(addWhitelistTask);
+                
+                ConsoleOutput.SuccessAlert("Added Genesis Contract address to whitelist successfully.");
+
+                _logger?.Info("======== WithoutApproval ========");
+                
+                var deployTask = ctx.AddTask("[green]Deploying contract[/]");
+
+                DeployUserContract(input, deployTask);
+
+                ConsoleOutput.SuccessAlert("Contract deployed.");
+            }
+        });
     }
 
     public void UpdateContracts(bool isApproval, UpdateInfo updateInfo, string file, AuthorInfo author, string salt = "")
@@ -112,9 +150,16 @@ public class DeployAndUpdateService
     }
 
 
-    private void DeployUserContract(UserContractDeploymentInput input)
+    private void DeployUserContract(UserContractDeploymentInput input, ProgressTask? task = null)
     {
         var result = _service.GenesisService.ExecuteMethodWithResult(GenesisMethod.DeployUserSmartContract, input);
+        if (result.Status != "MINED")
+        {
+            task?.StopTask();
+            ConsoleOutput.ErrorAlert($"Deployment failed: {result.Error}.\nWill close this deployment tool.");
+            return;
+        }
+        task?.Increment(20);
         var logEvent = result.Logs.First(l => l.Name.Equals(nameof(CodeCheckRequired))).NonIndexed;
         var codeCheckRequired = CodeCheckRequired.Parser.ParseFrom(ByteString.FromBase64(logEvent));
         var proposalLogEvent = result.Logs.First(l => l.Name.Equals(nameof(ProposalCreated))).NonIndexed;
@@ -127,15 +172,19 @@ public class DeployAndUpdateService
             $"Code hash: {codeHash.ToHex()}\n ProposalInput: {codeCheckRequired.ProposedContractInputHash.ToHex()}\n Proposal Id: {proposalId.ToHex()}");
 
         var check = CheckProposal(proposalId);
+        task?.Increment(20);
         if (!check)
             return;
 
         var currentHeight = AsyncHelper.RunSync(_service._nodeManager.ApiClient.GetBlockHeightAsync);
         _logger?.Info($"Check height: {result.BlockNumber} - {currentHeight}");
+        task?.Increment(10);
 
         var release = FindReleaseApprovedUserSmartContractMethod(result.BlockNumber, currentHeight);
         if (release.Equals(new TransactionResultDto()))
             return;
+
+        task?.Increment(20);
 
         _logger?.Info($"Release Transaction: {release.TransactionId}");
         var releaseLogEvent = release.Logs.First(l => l.Name.Equals(nameof(ContractDeployed)));
@@ -147,17 +196,30 @@ public class DeployAndUpdateService
             _logger?.Info(contractDeployedIndexed.Author == null
                 ? $"Code hash: {contractDeployedIndexed.CodeHash.ToHex()}"
                 : $"Author: {contractDeployedIndexed.Author}");
+            ConsoleOutput.SuccessAlert(contractDeployedIndexed.Author == null
+                ? $"Code hash: {contractDeployedIndexed.CodeHash.ToHex()}"
+                : $"Author: {contractDeployedIndexed.Author}");
         }
+
+        task?.Increment(10);
 
         var contractDeployedNonIndexed = ContractDeployed.Parser.ParseFrom(ByteString.FromBase64(nonIndexed));
         _logger?.Info($"Address: {contractDeployedNonIndexed.Address}\n" +
                      $"Version: {contractDeployedNonIndexed.Version}\n" +
                      $"ContractVersion: {contractDeployedNonIndexed.ContractVersion}\n" +
                      $"Height: {release.BlockNumber}");
+        ConsoleOutput.SuccessAlert($"Address: {contractDeployedNonIndexed.Address}\n" +
+                                   $"Version: {contractDeployedNonIndexed.Version}\n" +
+                                   $"ContractVersion: {contractDeployedNonIndexed.ContractVersion}\n" +
+                                   $"Height: {release.BlockNumber}");
 
         var contractInfo = _service.GenesisService.CallViewMethod<ContractInfo>(GenesisMethod.GetContractInfo,
             contractDeployedNonIndexed.Address);
         _logger?.Info($"Deploy Contract Info: {contractInfo}");
+        ConsoleOutput.SuccessAlert($"Deploy Contract Info: {contractInfo}");
+
+        task?.Increment(20);
+        task?.StopTask();
     }
 
     private void UpdateUserContract(ContractUpdateInput input)
@@ -238,32 +300,46 @@ public class DeployAndUpdateService
         };
     }
 
-    public void CheckMinersAndInitAccountBalance()
+    public void CheckMinersAndInitAccountBalance(ProgressTask? task = null)
     {
         var minersPubkey = _service.ConsensusService.GetCurrentMinersPubkey();
+
+        task?.Increment(30);
+
         var miners = minersPubkey.Select(m => Address.FromPublicKey(ByteArrayHelper.HexStringToByteArray(m))).ToList();
-        string account = null;
+        string? account = null;
         if (!miners.Contains(_service.CallAccount))
-            miners.Add(_service.CallAccount);
-        foreach (var miner in miners)
         {
-            var balance = _service.TokenService.GetUserBalance(miner.ToBase58());
-            if (balance < 1000000_00000000) continue;
+            miners.Add(_service.CallAccount);
+        }
+
+        task?.Increment(30);
+
+        foreach (var miner in from miner in miners
+                 let balance = _service.TokenService.GetUserBalance(miner.ToBase58())
+                 where balance >= 1000000_00000000
+                 select miner)
+        {
             account = miner.ToBase58();
         }
 
         if (account == null)
-            return;
-
-        foreach (var miner in miners)
         {
-            var balance = _service.TokenService.GetUserBalance(miner.ToBase58());
-            if (balance > 10000_00000000) continue;
+            task?.Increment(40);
+            return;
+        }
+
+        foreach (var miner in from miner in miners
+                 let balance = _service.TokenService.GetUserBalance(miner.ToBase58())
+                 where balance <= 10000_00000000
+                 select miner)
+        {
             _service.TokenService.SetAccount(account);
             _service.TokenService.TransferBalance(account, miner.ToBase58(), 10000_00000000);
         }
-    }
 
+        task?.Increment(40);
+    }
 
     private void ApproveByMiner(Hash proposalId)
     {
@@ -289,7 +365,6 @@ public class DeployAndUpdateService
             ProposedContractInputHash = input.ProposedContractInputHash
         };
     }
-
 
     private void ReleaseCodeCheck(ReleaseContractInput input, string type)
     {
@@ -375,7 +450,7 @@ public class DeployAndUpdateService
         return releaseTransaction;
     }
 
-    private void ParliamentChangeWhiteList()
+    private void ParliamentChangeWhiteList(ProgressTask? task)
     {
         var parliament = _service.ParliamentService;
         var proposalWhiteList =
@@ -383,9 +458,13 @@ public class DeployAndUpdateService
                 ParliamentMethod.GetProposerWhiteList, new Empty());
         _logger?.Info(proposalWhiteList);
 
+        task?.Increment(40);
+
         if (proposalWhiteList.Proposers.Contains(_service.GenesisService.Contract))
         {
             _logger?.Info("======== Genesis contract is in ProposalWhiteList ========");
+            task?.Increment(60);
+            task?.StopTask();
             return;
         }
 
@@ -405,6 +484,8 @@ public class DeployAndUpdateService
             nameof(ParliamentMethod.ChangeOrganizationProposerWhiteList), changeInput, defaultAddress,
             _service.CallAddress);
         ApproveByMiner(proposalId);
+        
+        task?.Increment(40);
 
         Thread.Sleep(10000);
         parliament.SetAccount(_service.CallAddress);
@@ -413,6 +494,9 @@ public class DeployAndUpdateService
             parliament.CallViewMethod<ProposerWhiteList>(
                 ParliamentMethod.GetProposerWhiteList, new Empty());
         _logger?.Info(proposalWhiteList);
+        
+        task?.Increment(20);
+        task?.StopTask();
     }
 
     private Address BuildContractAddressWithSalt(Address deployer, Hash salt)

@@ -18,6 +18,7 @@ using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using log4net;
 using Shouldly;
+using Spectre.Console;
 
 namespace AElfChain.Common.Managers
 {
@@ -427,7 +428,6 @@ namespace AElfChain.Common.Managers
                 Thread.Sleep(120000);
                 return _genesis.ReleaseApprovedContract(input, callUser);
             }
-
             
             var currentMiner = GetCurrentMiners();
             foreach (var miner in currentMiner)
@@ -451,20 +451,28 @@ namespace AElfChain.Common.Managers
 
         private bool CheckProposalStatue(Hash proposalId)
         {
-            var proposal = _parliament.CheckProposal(proposalId);
-            var expired = false;
-            var stopwatch = Stopwatch.StartNew();
-            while (!proposal.ToBeReleased && !expired)
-            {
-                Thread.Sleep(1000);
-                var dateTime = KernelHelper.GetUtcNow();
-                proposal = _parliament.CheckProposal(proposalId);
-                if (dateTime >= proposal.ExpiredTime) expired = true;
-                Console.Write(
-                    $"\rCheck proposal status, time using: {CommonHelper.ConvertMileSeconds(stopwatch.ElapsedMilliseconds)}");
-            }
+            var proposal = new ProposalOutput();
+            AnsiConsole.Progress()
+                // .HideCompleted(true)
+                .Start(ctx =>
+                {
+                    var checkTask = ctx.AddTask("[green]Checking proposal[/]");
+                    proposal = _parliament.CheckProposal(proposalId);
+                    var expired = false;
+                    var stopwatch = Stopwatch.StartNew();
+                    while (!proposal.ToBeReleased && !expired)
+                    {
+                        checkTask.Increment(10);
+                        Thread.Sleep(1000);
+                        var dateTime = KernelHelper.GetUtcNow();
+                        proposal = _parliament.CheckProposal(proposalId);
+                        if (dateTime >= proposal.ExpiredTime) expired = true;
+                        // Console.Write(
+                            // $"\rChecking proposal status, time using: {CommonHelper.ConvertMileSeconds(stopwatch.ElapsedMilliseconds)}");
+                    }
+                    checkTask.StopTask();
+                });
 
-            Console.WriteLine();
             return proposal.ToBeReleased;
         }
 

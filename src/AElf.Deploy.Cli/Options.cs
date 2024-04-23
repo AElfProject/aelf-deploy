@@ -1,6 +1,6 @@
 using CommandLine;
 
-namespace AElf.Local.Cli;
+namespace AElf.Deploy.Cli;
 
 internal class DeployOptions
 {

@@ -73,15 +73,15 @@ namespace AElfChain.Common.Managers
                 var indexSideHeight = CrossChain.GetSideChainHeight(sideChainId);
                 if (indexSideHeight < txHeight)
                 {
-                    Console.Write(
-                        $"\r[Main->Side]Current index height: {indexSideHeight}, target index height: {txHeight}. Time using: {CommonHelper.ConvertMileSeconds(stopwatch.ElapsedMilliseconds)}");
+                    // Console.Write(
+                        // $"\r[Main->Side]Current index height: {indexSideHeight}, target index height: {txHeight}. Time using: {CommonHelper.ConvertMileSeconds(stopwatch.ElapsedMilliseconds)}");
                     await Task.Delay(2000);
                     continue;
                 }
 
-                Console.Write(
-                    $"\r[Main->Side]Current index height: {indexSideHeight}, target index height: {txHeight}. Time using: {CommonHelper.ConvertMileSeconds(stopwatch.ElapsedMilliseconds)}");
-                Console.WriteLine();
+                // Console.Write(
+                //     $"\r[Main->Side]Current index height: {indexSideHeight}, target index height: {txHeight}. Time using: {CommonHelper.ConvertMileSeconds(stopwatch.ElapsedMilliseconds)}");
+                // Console.WriteLine();
                 stopwatch.Stop();
                 var mainHeight = await NodeManager.ApiClient.GetBlockHeightAsync();
                 return mainHeight;
@@ -96,15 +96,15 @@ namespace AElfChain.Common.Managers
                 var indexHeight = CrossChain.GetParentChainHeight();
                 if (blockHeight > indexHeight)
                 {
-                    Console.Write(
-                        $"\r[Side->Main]Current index height: {indexHeight}, target index height: {blockHeight}. Time using: {CommonHelper.ConvertMileSeconds(stopwatch.ElapsedMilliseconds)}");
+                    // Console.Write(
+                        // $"\r[Side->Main]Current index height: {indexHeight}, target index height: {blockHeight}. Time using: {CommonHelper.ConvertMileSeconds(stopwatch.ElapsedMilliseconds)}");
                     await Task.Delay(2000);
                     continue;
                 }
 
-                Console.Write(
-                    $"\r[Side->Main]Current index height: {indexHeight}, target index height: {blockHeight}. Time using: {CommonHelper.ConvertMileSeconds(stopwatch.ElapsedMilliseconds)}");
-                Console.WriteLine();
+                // Console.Write(
+                    // $"\r[Side->Main]Current index height: {indexHeight}, target index height: {blockHeight}. Time using: {CommonHelper.ConvertMileSeconds(stopwatch.ElapsedMilliseconds)}");
+                // Console.WriteLine();
                 stopwatch.Stop();
                 break;
             }

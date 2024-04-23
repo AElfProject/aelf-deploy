@@ -1,15 +1,9 @@
-using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Threading;
-using AElf.Standards.ACS0;
 using AElf;
 using AElf.Client.Service;
 using AElf.Client.Dto;
 using AElf.Types;
-using AElfChain.Common.Contracts;
 using AElfChain.Common.DtoExtension;
 using AElfChain.Common.Helpers;
 using Google.Protobuf;
@@ -345,8 +339,8 @@ namespace AElfChain.Common.Managers
                         return transactionResult;
                 }
 
-                Console.Write(
-                    $"\rTransaction {txId} status: {status}, time using: {CommonHelper.ConvertMileSeconds(stopwatch.ElapsedMilliseconds)}");
+                // Console.Write(
+                    // $"\rTransaction {txId} status: {status}, time using: {CommonHelper.ConvertMileSeconds(stopwatch.ElapsedMilliseconds)}");
                 Thread.Sleep(1000);
             }
 
