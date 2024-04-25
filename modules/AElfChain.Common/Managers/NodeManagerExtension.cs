@@ -4,6 +4,7 @@ using AElf.Contracts.MultiToken;
 using AElf.Types;
 using AElfChain.Common.Contracts;
 using AElfChain.Common.DtoExtension;
+using Spectre.Console;
 using Volo.Abp.Threading;
 
 namespace AElfChain.Common.Managers
@@ -63,7 +64,7 @@ namespace AElfChain.Common.Managers
                 if (chainStatus.LastIrreversibleBlockHeight > transactionExecutionBlockNumber + 8)
                     break;
                 Thread.Sleep(4000);
-                Console.Write(
+                AnsiConsole.WriteLine(
                     $"\rBlock height: {chainStatus.BestChainHeight}, Lib height: {chainStatus.LastIrreversibleBlockHeight}");
             }
         }
@@ -93,12 +94,12 @@ namespace AElfChain.Common.Managers
                 var chainStatus = AsyncHelper.RunSync(nodeManager.ApiClient.GetChainStatusAsync);
                 if (chainStatus.LastIrreversibleBlockHeight > currentHeight)
                 {
-                    Console.WriteLine();
+                    AnsiConsole.WriteLine();
                     break;
                 }
 
                 Thread.Sleep(4000);
-                Console.Write(
+                AnsiConsole.WriteLine(
                     $"\rBlock height: {chainStatus.BestChainHeight}, Lib height: {chainStatus.LastIrreversibleBlockHeight}, Wait target height: {currentHeight}");
             }
         }

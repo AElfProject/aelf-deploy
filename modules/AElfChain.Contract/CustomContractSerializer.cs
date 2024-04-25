@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using Google.Protobuf.Reflection;
 using ProtoBuf;
+using Spectre.Console;
 
 namespace AElfChain.Contract
 {
@@ -78,27 +79,27 @@ namespace AElfChain.Contract
             var count = 0;
             foreach (var method in methods)
             {
-                Console.WriteLine($"{count++: 00}. {method}");
+                AnsiConsole.WriteLine($"{count++: 00}. {method}");
                 if (withDetails)
                     GetParameters(method);
             }
 
-            Console.WriteLine();
+            AnsiConsole.WriteLine();
         }
 
         public void GetParameters(string methodName)
         {
             var method = Descriptor.Methods.FirstOrDefault(o => o.MethodName == methodName);
             if (method == null) return;
-            Console.WriteLine($"[Input]: {method.InputMessage.Name}");
+            AnsiConsole.WriteLine($"[Input]: {method.InputMessage.Name}");
             var inputIndex = 1;
             foreach (var parameter in method.InputMessage.Fields)
-                Console.WriteLine($"Index: {inputIndex++}  Name: {parameter.PadRight(24)}");
+                AnsiConsole.WriteLine($"Index: {inputIndex++}  Name: {parameter.PadRight(24)}");
 
-            Console.WriteLine($"[Output]: {method.OutputMessage.Name}");
+            AnsiConsole.WriteLine($"[Output]: {method.OutputMessage.Name}");
             var outputIndex = 0;
             foreach (var parameter in method.OutputMessage.Fields)
-                Console.WriteLine($"Index: {outputIndex++}  Name: {parameter.PadRight(24)}");
+                AnsiConsole.WriteLine($"Index: {outputIndex++}  Name: {parameter.PadRight(24)}");
         }
 
         private ContractDescriptor UpdateContractDescriptor()

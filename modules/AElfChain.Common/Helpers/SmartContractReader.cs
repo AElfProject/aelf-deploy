@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using Spectre.Console;
 
 namespace AElfChain.Common.Helpers
 {
@@ -32,8 +33,8 @@ namespace AElfChain.Common.Helpers
             }
             catch (Exception e)
             {
-                Console.WriteLine("SmartContractReader: Invalid transaction data.");
-                Console.WriteLine($"Exception: {e.Message}");
+                AnsiConsole.WriteLine("SmartContractReader: Invalid transaction data.");
+                AnsiConsole.WriteLine($"Exception: {e.Message}");
                 return null;
             }
         }

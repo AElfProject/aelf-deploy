@@ -5,6 +5,7 @@ using System.Linq;
 using log4net;
 using log4net.Config;
 using Newtonsoft.Json;
+using Spectre.Console;
 
 namespace AElfChain.Common.Helpers
 {
@@ -95,7 +96,7 @@ namespace AElfChain.Common.Helpers
         public static void Info(this ILog logger, string message, bool checkCursorLeft)
         {
             if (checkCursorLeft && Console.CursorLeft != 0)
-                Console.WriteLine();
+                AnsiConsole.WriteLine();
 
             logger.Info(message);
         }
@@ -129,7 +130,7 @@ namespace AElfChain.Common.Helpers
         public static void Warn(this ILog logger, string message, bool checkCursorLeft)
         {
             if (checkCursorLeft && Console.CursorLeft != 0)
-                Console.Write("\r\n");
+                AnsiConsole.WriteLine("\r\n");
 
             logger.Warn(message);
         }
@@ -150,7 +151,7 @@ namespace AElfChain.Common.Helpers
         public static void Error(this ILog logger, string message, bool checkCursorLeft)
         {
             if (checkCursorLeft && Console.CursorLeft != 0)
-                Console.WriteLine();
+                AnsiConsole.WriteLine();
 
             logger.Error(message);
         }

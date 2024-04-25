@@ -28,9 +28,7 @@ public class DeployAndUpdateService
 
     public void DeployContracts(bool isApproval, string file, AuthorInfo author, string salt = "")
     {
-        AnsiConsole.Progress()
-            // .HideCompleted(true)
-            .Start(ctx =>
+        ConsoleOutput.Progress(ctx =>
         {
             var prepareCodeTask = ctx.AddTask("[green]Reading dll[/]");
             
@@ -149,16 +147,16 @@ public class DeployAndUpdateService
         }
     }
 
-
     private void DeployUserContract(UserContractDeploymentInput input, ProgressTask? task = null)
     {
         var result = _service.GenesisService.ExecuteMethodWithResult(GenesisMethod.DeployUserSmartContract, input);
         if (result.Status != "MINED")
         {
             task?.StopTask();
-            ConsoleOutput.ErrorAlert($"Deployment failed: {result.Error}.\nWill close this deployment tool.");
+            ConsoleOutput.ErrorAlert($"Deployment failed: {result.Error}\nWill close this deployment tool.");
             return;
         }
+
         task?.Increment(20);
         var logEvent = result.Logs.First(l => l.Name.Equals(nameof(CodeCheckRequired))).NonIndexed;
         var codeCheckRequired = CodeCheckRequired.Parser.ParseFrom(ByteString.FromBase64(logEvent));
@@ -205,9 +203,9 @@ public class DeployAndUpdateService
 
         var contractDeployedNonIndexed = ContractDeployed.Parser.ParseFrom(ByteString.FromBase64(nonIndexed));
         _logger?.Info($"Address: {contractDeployedNonIndexed.Address}\n" +
-                     $"Version: {contractDeployedNonIndexed.Version}\n" +
-                     $"ContractVersion: {contractDeployedNonIndexed.ContractVersion}\n" +
-                     $"Height: {release.BlockNumber}");
+                      $"Version: {contractDeployedNonIndexed.Version}\n" +
+                      $"ContractVersion: {contractDeployedNonIndexed.ContractVersion}\n" +
+                      $"Height: {release.BlockNumber}");
         ConsoleOutput.SuccessAlert($"Address: {contractDeployedNonIndexed.Address}\n" +
                                    $"Version: {contractDeployedNonIndexed.Version}\n" +
                                    $"ContractVersion: {contractDeployedNonIndexed.ContractVersion}\n" +
@@ -422,7 +420,7 @@ public class DeployAndUpdateService
         {
             Thread.Sleep(1000);
             proposalInfo = _service.ParliamentService.CheckProposal(proposalId);
-            Console.Write(
+            AnsiConsole.WriteLine(
                 $"\r[Processing]: ProposalId={proposalId.ToHex()}, " +
                 $"ToBeReleased: {proposalInfo.ToBeReleased}, " +
                 $"using time:{CommonHelper.ConvertMileSeconds(stopwatch.ElapsedMilliseconds)}");

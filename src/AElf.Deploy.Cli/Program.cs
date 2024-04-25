@@ -46,9 +46,7 @@ public class Program
 
         var deployService = new DeployAndUpdateService(service, Logger);
 
-        AnsiConsole.Progress()
-            // .HideCompleted(true)
-            .Start(ctx =>
+        ConsoleOutput.Progress(ctx =>
             {
                 while(!ctx.IsFinished)
                 {

@@ -113,6 +113,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\..\src\AElf.Console\AElf.Console.csproj" />
       <ProjectReference Include="..\AElfChain.Contract\AElfChain.Contract.csproj" />
     </ItemGroup>
 

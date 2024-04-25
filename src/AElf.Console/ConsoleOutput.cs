@@ -7,13 +7,11 @@ public static class ConsoleOutput
     public static void StartAlert(params string[] outputs)
     {
         WriteStringsToConsole(outputs.Select(o => $"[yellow]{o}[/]"));
-        AnsiConsole.WriteLine(
-            "--------------------------------------------------------------------------------------------");
     }
 
     public static void StandardAlert(params string[] outputs)
     {
-        WriteStringsToConsole(outputs.Select(o => $"[white]{o}[/]"));
+        WriteStringsToConsole(outputs.Select(o => $"[yellow]{o}[/]"));
     }
 
     public static void GenerateAlert(params string[] outputs)
@@ -23,8 +21,6 @@ public static class ConsoleOutput
 
     public static void SuccessAlert(params string[] outputs)
     {
-        System.Console.WriteLine(
-            "--------------------------------------------------------------------------------------------");
         WriteStringsToConsole(outputs.Select(o => $"[green]{o}[/]"));
     }
 
@@ -45,5 +41,20 @@ public static class ConsoleOutput
         {
             AnsiConsole.MarkupLine(output);
         }
+    }
+
+    public static void Progress(Action<ProgressContext> action)
+    {
+        AnsiConsole.Progress()
+            .AutoRefresh(true)
+            .AutoClear(true)
+            .HideCompleted(true)
+            .Columns(
+                new TaskDescriptionColumn { Alignment = Justify.Left },
+                new ProgressBarColumn(),
+                new SpinnerColumn()
+                )
+            .Start(action);
+        AnsiConsole.WriteLine();
     }
 }

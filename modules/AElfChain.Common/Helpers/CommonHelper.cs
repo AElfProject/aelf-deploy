@@ -127,9 +127,9 @@ namespace AElfChain.Common.Helpers
 
         public static void ConsoleChangeLine()
         {
-            var cursorPosition = Console.CursorLeft;
-            if (cursorPosition != 0)
-                Console.WriteLine();
+            // var cursorPosition = Console.CursorLeft;
+            // if (cursorPosition != 0)
+            //     Console.WriteLine();
         }
 
         public static Address GetVirtualAddress(Address contractAddress, Address userAddress, Address tokenAddress, Hash id)

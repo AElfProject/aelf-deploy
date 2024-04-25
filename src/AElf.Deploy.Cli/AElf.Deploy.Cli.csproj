@@ -8,7 +8,7 @@
         <PackAsTool>true</PackAsTool>
         <ToolCommandName>aelf-deploy</ToolCommandName>
         <PackageId>aelf.deploy</PackageId>
-        <Version>0.0.1</Version>
+        <Version>0.0.2</Version>
         <PackageOutputPath>./nupkg</PackageOutputPath>
         <RootNamespace>AElf.Deploy.Cli</RootNamespace>
     </PropertyGroup>

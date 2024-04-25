@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using AElfChain.Common.Helpers;
 using Google.Protobuf.Reflection;
+using Spectre.Console;
 
 namespace AElfChain.Common.Contracts.Serializer
 {
@@ -37,11 +38,11 @@ namespace AElfChain.Common.Contracts.Serializer
             {
                 $"{ActionMethodNames[i].PadRight(40)}".WriteSuccessLine(changeLine: false);
                 if (i % 4 == 3)
-                    Console.WriteLine();
+                    AnsiConsole.WriteLine();
             }
 
             if (ActionMethodNames.Count % 4 != 0)
-                Console.WriteLine();
+                AnsiConsole.WriteLine();
         }
 
         public void GetContractViewMethodsInfo()
@@ -51,11 +52,11 @@ namespace AElfChain.Common.Contracts.Serializer
             {
                 $"{ViewMethodNames[i].PadRight(40)}".WriteSuccessLine(changeLine: false);
                 if (i % 4 == 3)
-                    Console.WriteLine();
+                    AnsiConsole.WriteLine();
             }
 
             if (ViewMethodNames.Count % 4 != 0)
-                Console.WriteLine();
+                AnsiConsole.WriteLine();
         }
 
         private void GetContractMethods()

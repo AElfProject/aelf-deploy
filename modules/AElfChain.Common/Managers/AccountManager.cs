@@ -7,6 +7,7 @@ using AElf.Cryptography.ECDSA;
 using AElf.Types;
 using AElfChain.Common.Helpers;
 using log4net;
+using Spectre.Console;
 using Volo.Abp.Threading;
 
 namespace AElfChain.Common.Managers
@@ -187,7 +188,7 @@ namespace AElfChain.Common.Managers
 
         private static string AskInvisible(string prefix)
         {
-            Console.WriteLine(prefix);
+            AnsiConsole.WriteLine(prefix);
 
             var pwd = new SecureString();
             while (true)
@@ -205,7 +206,7 @@ namespace AElfChain.Common.Managers
                 }
             }
 
-            Console.WriteLine();
+            AnsiConsole.WriteLine();
 
             return new NetworkCredential("", pwd).Password;
         }

@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using Spectre.Console;
 
 namespace AElfChain.Common.Helpers
 {
@@ -16,7 +17,7 @@ namespace AElfChain.Common.Helpers
             var ilProcessorFirst = methodFirst.Body.GetILProcessor();
             var ilProcessorLast = methodLast.Body.GetILProcessor();
             var condition = DateTime.UtcNow.Second % 4;
-            Console.WriteLine(condition);
+            AnsiConsole.WriteLine(condition);
             switch (condition)
             {
                 case 0:

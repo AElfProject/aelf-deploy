@@ -1,4 +1,5 @@
 using System;
+using Spectre.Console;
 
 namespace AElfChain.Common.Helpers
 {
@@ -12,9 +13,9 @@ namespace AElfChain.Common.Helpers
             var currentForeColor = Console.ForegroundColor;
             Console.ForegroundColor = color;
             if (changeLine)
-                Console.WriteLine(str);
+                AnsiConsole.WriteLine(str);
             else
-                Console.Write(str);
+                AnsiConsole.Write(str);
             Console.ForegroundColor = currentForeColor;
         }
 

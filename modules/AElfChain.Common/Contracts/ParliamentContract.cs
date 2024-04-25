@@ -13,6 +13,7 @@ using AElfChain.Common.Managers;
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using Shouldly;
+using Spectre.Console;
 using Volo.Abp.Threading;
 
 namespace AElfChain.Common.Contracts
@@ -121,7 +122,7 @@ namespace AElfChain.Common.Contracts
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine(e);
+                    AnsiConsole.WriteLine(e.Message);
                 }
             }
 
@@ -184,7 +185,7 @@ namespace AElfChain.Common.Contracts
             {
                 Thread.Sleep(1000);
                 proposalInfo = CheckProposal(proposalId);
-                Console.Write(
+                AnsiConsole.WriteLine(
                     $"\r[Processing]: ProposalId={proposalId.ToHex()}, " +
                     $"ToBeReleased: {proposalInfo.ToBeReleased}, " +
                     $"using time:{CommonHelper.ConvertMileSeconds(stopwatch.ElapsedMilliseconds)}");

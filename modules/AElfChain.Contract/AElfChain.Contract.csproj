@@ -7,5 +7,6 @@
     <ItemGroup>
         <PackageReference Include="protobuf-net" Version="3.0.101" />
         <PackageReference Include="protobuf-net.Reflection" Version="3.0.101" />
+        <PackageReference Include="Spectre.Console" Version="0.48.1-preview.0.44" />
     </ItemGroup>
 </Project>

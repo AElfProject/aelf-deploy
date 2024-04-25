@@ -8,6 +8,7 @@ using AElfChain.Common.DtoExtension;
 using AElfChain.Common.Helpers;
 using Google.Protobuf;
 using log4net;
+using Spectre.Console;
 using Volo.Abp.Threading;
 
 namespace AElfChain.Common.Managers
@@ -293,7 +294,7 @@ namespace AElfChain.Common.Managers
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine(e);
+                    AnsiConsole.WriteLine(e.Message);
                     Thread.Sleep(10000);
                     Logger.Info($"Check {txId} again:");
                     transactionResult = AsyncHelper.RunSync(() => ApiClient.GetTransactionResultAsync(txId));
@@ -344,7 +345,7 @@ namespace AElfChain.Common.Managers
                 Thread.Sleep(1000);
             }
 
-            Console.WriteLine();
+            AnsiConsole.WriteLine();
             // throw new TimeoutException($"Transaction {txId} cannot be 'Mined' after long time.");
             return new TransactionResultDto();
         }
@@ -364,7 +365,7 @@ namespace AElfChain.Common.Managers
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine(e);
+                    AnsiConsole.WriteLine(e.Message);
                     Thread.Sleep(5000);
                     Logger.Info($"Check {id} again:");
                     transactionResult = AsyncHelper.RunSync(() => ApiClient.GetTransactionResultAsync(id));
@@ -376,7 +377,7 @@ namespace AElfChain.Common.Managers
                     case TransactionResultStatus.Pending:
                     case TransactionResultStatus.PendingValidation:
                     case TransactionResultStatus.NotExisted:
-                        Console.Write(
+                        AnsiConsole.WriteLine(
                             $"\r[Processing]: TransactionId={id}, Status: {status}, using time:{CommonHelper.ConvertMileSeconds(stopwatch.ElapsedMilliseconds)}");
                         transactionQueue.Enqueue(id);
                         Thread.Sleep(500);

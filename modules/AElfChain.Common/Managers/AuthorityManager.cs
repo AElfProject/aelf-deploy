@@ -1,13 +1,9 @@
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Threading;
 using AElf.Standards.ACS0;
 using AElf.Standards.ACS3;
 using AElf;
 using AElf.Client.Dto;
+using AElf.Console;
 using AElf.Contracts.Association;
 using AElf.Contracts.Consensus.AEDPoS;
 using AElf.Types;
@@ -18,7 +14,6 @@ using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using log4net;
 using Shouldly;
-using Spectre.Console;
 
 namespace AElfChain.Common.Managers
 {
@@ -452,9 +447,7 @@ namespace AElfChain.Common.Managers
         private bool CheckProposalStatue(Hash proposalId)
         {
             var proposal = new ProposalOutput();
-            AnsiConsole.Progress()
-                // .HideCompleted(true)
-                .Start(ctx =>
+            ConsoleOutput.Progress(ctx =>
                 {
                     var checkTask = ctx.AddTask("[green]Checking proposal[/]");
                     proposal = _parliament.CheckProposal(proposalId);
