@@ -53,8 +53,13 @@ public static class ConsoleOutput
                 new TaskDescriptionColumn { Alignment = Justify.Left },
                 new ProgressBarColumn(),
                 new SpinnerColumn()
-                )
+            )
             .Start(action);
         AnsiConsole.WriteLine();
+    }
+
+    public static void Status(string status, Action<StatusContext> action)
+    {
+        AnsiConsole.Status().Start(status, action);
     }
 }

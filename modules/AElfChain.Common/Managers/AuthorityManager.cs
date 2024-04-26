@@ -14,6 +14,7 @@ using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using log4net;
 using Shouldly;
+using Spectre.Console;
 
 namespace AElfChain.Common.Managers
 {
@@ -447,24 +448,21 @@ namespace AElfChain.Common.Managers
         private bool CheckProposalStatue(Hash proposalId)
         {
             var proposal = new ProposalOutput();
-            ConsoleOutput.Progress(ctx =>
+            ConsoleOutput.Status("Checking proposal...", ctx =>
+            {
+                proposal = _parliament.CheckProposal(proposalId);
+                var expired = false;
+                var stopwatch = Stopwatch.StartNew();
+                while (!proposal.ToBeReleased && !expired)
                 {
-                    var checkTask = ctx.AddTask("[green]Checking proposal[/]");
+                    Thread.Sleep(1000);
+                    var dateTime = KernelHelper.GetUtcNow();
                     proposal = _parliament.CheckProposal(proposalId);
-                    var expired = false;
-                    var stopwatch = Stopwatch.StartNew();
-                    while (!proposal.ToBeReleased && !expired)
-                    {
-                        checkTask.Increment(10);
-                        Thread.Sleep(1000);
-                        var dateTime = KernelHelper.GetUtcNow();
-                        proposal = _parliament.CheckProposal(proposalId);
-                        if (dateTime >= proposal.ExpiredTime) expired = true;
-                        // Console.Write(
-                            // $"\rChecking proposal status, time using: {CommonHelper.ConvertMileSeconds(stopwatch.ElapsedMilliseconds)}");
-                    }
-                    checkTask.StopTask();
-                });
+                    if (dateTime >= proposal.ExpiredTime) expired = true;
+                    ConsoleOutput.StandardAlert(
+                        $"\rChecking proposal status, time using: {CommonHelper.ConvertMileSeconds(stopwatch.ElapsedMilliseconds)}");
+                }
+            });
 
             return proposal.ToBeReleased;
         }

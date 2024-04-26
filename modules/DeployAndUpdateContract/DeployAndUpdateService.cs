@@ -20,7 +20,7 @@ namespace DeployAndUpdateContract;
 
 public class DeployAndUpdateService
 {
-    public DeployAndUpdateService(Service service, ILog? logger)
+    public DeployAndUpdateService(Service service, ILog? logger = null)
     {
         _service = service;
         _logger = logger;
@@ -28,22 +28,24 @@ public class DeployAndUpdateService
 
     public void DeployContracts(bool isApproval, string file, AuthorInfo author, string salt = "")
     {
-        ConsoleOutput.Progress(ctx =>
+        var codeArray = Array.Empty<byte>();
+        var codeHash = Hash.Empty;
+        var saltHash = Hash.Empty;
+        
+        ConsoleOutput.Status("Reading contract dll...", ctx =>
         {
-            var prepareCodeTask = ctx.AddTask("[green]Reading dll[/]");
-            
             var contractReader = new SmartContractReader(CommonHelper.GetCurrentDataDir());
-            var codeArray = contractReader.Read(file);
-            var codeHash = HashHelper.ComputeFrom(ByteString.CopyFrom(codeArray).ToByteArray());
-            var saltHash = HashHelper.ComputeFrom(salt);
+            codeArray = contractReader.Read(file);
+            codeHash = HashHelper.ComputeFrom(ByteString.CopyFrom(codeArray).ToByteArray());
+            saltHash = HashHelper.ComputeFrom(salt);
+            
+            ConsoleOutput.StandardAlert($"Code Hash: {codeHash.ToHex()}");
+        });
 
-            prepareCodeTask.Increment(100);
-            prepareCodeTask.StopTask();
-
-            if (isApproval)
+        if (isApproval)
+        {
+            ConsoleOutput.Status("Deploying contract with audit...", ctx =>
             {
-                ConsoleOutput.GenerateAlert("Deploying contract with audit.");
-
                 var contractOperation = salt == ""
                     ? null
                     : GenerateContractOperation(author, codeHash, saltHash, 1);
@@ -55,52 +57,39 @@ public class DeployAndUpdateService
                     ContractOperation = contractOperation
                 };
 
-                _logger?.Info("======== WithApproval ========");
+                ConsoleOutput.StandardAlert("Proposing new contract.");
+
                 var contractProposalInfo = ProposeNewContract(input);
 
-                var approveTask = ctx.AddTask("[green]Approving deployment[/]");
+                ConsoleOutput.StandardAlert($"Proposal: {contractProposalInfo}");
                 
                 ApproveByMiner(contractProposalInfo.ProposalId);
 
-                approveTask.Increment(100);
-                approveTask.StopTask();
-                
                 var releaseCodeCheckInput = ReleaseApprove(contractProposalInfo);
-                
-                var releaseTask = ctx.AddTask("[green]Releasing proposal[/]");
 
                 ReleaseCodeCheck(releaseCodeCheckInput, "deploy");
-
-                releaseTask.Increment(100);
-                releaseTask.StopTask();
-            }
-            else
+            });
+        }
+        else
+        {
+            ConsoleOutput.Status("Deploying contract with audit...", ctx =>
             {
-                ConsoleOutput.StandardAlert("Deploying contract without audit.");
-
                 var input = new UserContractDeploymentInput
                 {
                     Category = 0,
                     Code = ByteString.CopyFrom(codeArray),
                     Salt = salt == "" ? null : HashHelper.ComputeFrom(salt)
                 };
-                _logger?.Info("======== AddWhiteList ========");
-                
-                var addWhitelistTask = ctx.AddTask("[green]Manipulating whitelist[/]");
-                
-                ParliamentChangeWhiteList(addWhitelistTask);
-                
+
+                ParliamentChangeWhiteList();
+
                 ConsoleOutput.SuccessAlert("Added Genesis Contract address to whitelist successfully.");
 
-                _logger?.Info("======== WithoutApproval ========");
-                
-                var deployTask = ctx.AddTask("[green]Deploying contract[/]");
-
-                DeployUserContract(input, deployTask);
+                DeployUserContract(input);
 
                 ConsoleOutput.SuccessAlert("Contract deployed.");
-            }
-        });
+            });
+        }
     }
 
     public void UpdateContracts(bool isApproval, UpdateInfo updateInfo, string file, AuthorInfo author, string salt = "")
@@ -324,6 +313,7 @@ public class DeployAndUpdateService
         if (account == null)
         {
             task?.Increment(40);
+            task?.StopTask();
             return;
         }
 
@@ -337,6 +327,7 @@ public class DeployAndUpdateService
         }
 
         task?.Increment(40);
+        task?.StopTask();
     }
 
     private void ApproveByMiner(Hash proposalId)
@@ -448,13 +439,12 @@ public class DeployAndUpdateService
         return releaseTransaction;
     }
 
-    private void ParliamentChangeWhiteList(ProgressTask? task)
+    private void ParliamentChangeWhiteList(ProgressTask? task = null)
     {
         var parliament = _service.ParliamentService;
         var proposalWhiteList =
             parliament.CallViewMethod<ProposerWhiteList>(
                 ParliamentMethod.GetProposerWhiteList, new Empty());
-        _logger?.Info(proposalWhiteList);
 
         task?.Increment(40);
 
@@ -463,6 +453,7 @@ public class DeployAndUpdateService
             _logger?.Info("======== Genesis contract is in ProposalWhiteList ========");
             task?.Increment(60);
             task?.StopTask();
+            ConsoleOutput.StandardAlert("Genesis contract is already in proposal whitelist.");
             return;
         }
 

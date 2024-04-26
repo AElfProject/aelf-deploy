@@ -1,11 +1,9 @@
 ﻿using AElf.Console;
-using AElf.Cryptography;
-using AElf.Types;
 using AElfChain.Common.Helpers;
 using CommandLine;
 using DeployAndUpdateContract;
 using log4net;
-using Spectre.Console;
+using Spectre.Console.Cli;
 
 namespace AElf.Deploy.Cli;
 
@@ -13,13 +11,16 @@ public class Program
 {
     private static readonly ILog Logger = Log4NetHelper.GetLogger();
 
-    private static void Main(string[] args)
+    private static int Main(string[] args)
     {
         Log4NetHelper.LogInit("AElfDeployLog");
 
-        Parser.Default.ParseArguments<DeployOptions>(args)
-            .WithParsed(Run)
-            .WithNotParsed(Error);
+        // Parser.Default.ParseArguments<DeployOptions>(args)
+        //     .WithParsed(Run)
+        //     .WithNotParsed(Error);
+
+        var app = new CommandApp<DeployCommand>();
+        return app.Run(args);
     }
 
     private static void Error(IEnumerable<Error> errors)
@@ -47,13 +48,13 @@ public class Program
         var deployService = new DeployAndUpdateService(service, Logger);
 
         ConsoleOutput.Progress(ctx =>
+        {
+            while (!ctx.IsFinished)
             {
-                while(!ctx.IsFinished)
-                {
-                    deployService.CheckMinersAndInitAccountBalance();
-                }
-            });
-        
+                deployService.CheckMinersAndInitAccountBalance();
+            }
+        });
+
         var authorInfo = new AuthorInfo
         {
             Author = options.Address,
@@ -62,7 +63,8 @@ public class Program
         };
         if (options.IsUpdate)
         {
-            deployService.UpdateContracts(options.IsApproval, new UpdateInfo { ContractAddress = options.UpdateAddress },
+            deployService.UpdateContracts(options.IsApproval,
+                new UpdateInfo { ContractAddress = options.UpdateAddress },
                 options.ContractDllPath, authorInfo, options.Salt);
         }
         else
